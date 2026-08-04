@@ -1,0 +1,738 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\geometry{a4paper, margin=1in}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{verbatim}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Báo cáo chi tiết: Bài tập CS:APP Data Lab (bits.c)},
+    pdfpagemode=FullScreen,
+}
+
+% Cấu hình listings cho mã nguồn
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\small,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=4
+}
+
+\lstset{style=mystyle}
+
+\begin{document}
+
+% --- TRANG BÌA ---
+\begin{titlepage}
+\begin{tikzpicture}[remember picture, overlay]
+    % Vẽ khung viền đôi giống hệt mẫu ảnh
+    \draw[line width = 2pt] ($(current page.north west) + (1.5cm,-1.5cm)$) rectangle ($(current page.south east) + (-1.5cm,1.5cm)$);
+    \draw[line width = 0.5pt] ($(current page.north west) + (1.6cm,-1.6cm)$) rectangle ($(current page.south east) + (-1.6cm,1.6cm)$);
+\end{tikzpicture}
+
+\begin{center}
+    \vspace*{0.5cm}
+    \begingroup
+    \fontsize{13pt}{15pt}\selectfont
+    \textbf{TẬP ĐOÀN CÔNG NGHIỆP -- VIỄN THÔNG QUÂN ĐỘI} \\
+    \vspace{0.2cm}
+    \rule{6cm}{0.5pt} \\
+    \endgroup
+    
+    \vspace{2.5cm}
+    
+    % Logo Viettel dạng hình ảnh chính thức
+    \includegraphics[height=1.2cm]{viettel_logo.png} \\
+    
+    \vspace{2.0cm}
+    
+    \begingroup
+    \fontsize{24pt}{28pt}\selectfont
+    \textbf{BÁO CÁO BÀI LAB} \\
+    \vspace{0.6cm}
+    \fontsize{18pt}{22pt}\selectfont
+    \textbf{CSAPP : DATALAB} \\
+    \endgroup
+    
+    \vspace{3.5cm}
+    
+    % Phần thông tin sinh viên căn lề cân bằng
+    \begin{tabular}{lcl}
+        \fontsize{13pt}{16pt}\selectfont \textbf{Họ và Tên} & : & \fontsize{13pt}{16pt}\selectfont Lê Chí Hiếu \\
+        \fontsize{13pt}{16pt}\selectfont \textbf{Email}     & : & \fontsize{13pt}{16pt}\selectfont ximoncute147@gmail.com \\
+        \fontsize{13pt}{16pt}\selectfont \textbf{Đơn vị}    & : & \fontsize{13pt}{16pt}\selectfont Viettel High Tech \\
+        \fontsize{13pt}{16pt}\selectfont \textbf{Lĩnh vực}  & : & \fontsize{13pt}{16pt}\selectfont Embedded Linux
+    \end{tabular}
+    
+    \vfill
+    
+    \fontsize{12pt}{14pt}\selectfont
+    \textbf{HÀ NỘI, 2026}
+\end{center}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section*{GIỚI THIỆU}
+Bài thực hành CS:APP Data Lab (\texttt{bits.c}) là một trong những bài tập kinh điển giúp người học làm quen và hiểu sâu sắc về cách biểu diễn dữ liệu nhị phân của các kiểu số nguyên có dấu (số bù 2) và số thực dấu phẩy động (chuẩn IEEE 754). Thông qua việc giải quyết các bài toán thao tác bit với những ràng buộc khắt khe về số lượng và loại toán tử được phép sử dụng, chúng ta có thể rèn luyện tư duy logic toán học tối ưu, hiểu rõ bản chất cơ chế tính toán vật lý của vi xử lý.
+
+\newpage
+
+\section{PHẦN 1: HƯỚNG DẪN CHẠY LỆNH NHANH (QUICK START)}
+\textit{Bạn chỉ cần copy đúng các lệnh dưới đây vào terminal WSL (hoặc Ubuntu) để cài đặt, biên dịch và chạy thử.}
+
+\subsection{Bước 1: Cài đặt thư viện hỗ trợ biên dịch 32-bit (Chỉ chạy 1 lần duy nhất)}
+Bài lab này yêu cầu biên dịch ở kiến trúc 32-bit (\texttt{-m32}). Bạn hãy copy dòng lệnh dưới đây và chạy trong WSL:
+\begin{lstlisting}[language=bash]
+sudo apt update && sudo apt install -y build-essential gcc-multilib g++-multilib perl
+\end{lstlisting}
+
+\subsection{Bước 2: Di chuyển vào thư mục bài làm}
+\begin{lstlisting}[language=bash]
+cd /mnt/c/Users/Admin/Desktop/Viettel_high_tech/01-data-lab/datalab-handout
+\end{lstlisting}
+
+\subsection{Bước 3: Dọn dẹp tệp tin cũ \& Biên dịch lại}
+Mỗi lần bạn sửa đổi file \texttt{bits.c}, bạn bắt buộc phải chạy lệnh này để biên dịch lại chương trình thử nghiệm:
+\begin{lstlisting}[language=bash]
+make clean && make btest
+\end{lstlisting}
+
+\subsection{Bước 4: Chạy thử nghiệm tất cả các hàm để kiểm tra kết quả}
+Chạy lệnh dưới đây để kiểm tra xem bạn được bao nhiêu điểm. Chúng tôi đã tăng thời gian chờ lên 30 giây để tránh lỗi quá hạn (timeout):
+\begin{lstlisting}[language=bash]
+./btest -T 30
+\end{lstlisting}
+
+\subsection{Bước 5: Chạy tự động chấm điểm toàn bộ (Cả điểm chính xác và số toán tử)}
+Chạy lệnh này để kiểm tra xem bạn có vi phạm quy định nào không (như dùng quá số lượng toán tử, dùng lệnh cấm) và hiển thị bảng điểm cuối cùng:
+\begin{lstlisting}[language=bash]
+./driver.pl
+\end{lstlisting}
+\textit{Kết quả đúng tuyệt đối sẽ hiển thị: \textbf{\texttt{Score = 62/62 [36/36 Corr + 26/26 Perf]}}}
+
+
+
+\section{PHẦN 2: CÁC KHÁI NIỆM CƠ BẢN CẦN BIẾT}
+Nếu bạn chưa hiểu tại sao lại viết code như vậy, hãy đọc phần này:
+
+\begin{enumerate}
+    \item \textbf{Phép AND (\texttt{\&}):} Giữ lại các bit 1 ở những vị trí mà cả hai số đều là 1.
+    \begin{itemize}
+        \item Ví dụ: \texttt{1100 \& 1010 = 1000}.
+    \end{itemize}
+    \item \textbf{Phép OR (\texttt{|}):} Bật bit thành 1 nếu ít nhất một trong hai số ở vị trí đó là 1.
+    \begin{itemize}
+        \item Ví dụ: \texttt{1100 | 1010 = 1110}.
+    \end{itemize}
+    \item \textbf{Phép XOR (\texttt{\textasciicircum}):} Trả về 1 nếu hai bit khác nhau, trả về 0 nếu hai bit giống nhau.
+    \begin{itemize}
+        \item Ví dụ: \texttt{1100 \textasciicircum\ 1010 = 0110}.
+    \end{itemize}
+    \item \textbf{Phép NOT (\texttt{\(\sim\)}):} Đảo ngược tất cả các bit (0 thành 1, 1 thành 0).
+    \begin{itemize}
+        \item Ví dụ: \texttt{\(\sim\) 1100 = 0011}.
+    \end{itemize}
+    \item \textbf{Phép dịch trái (\texttt{<< n}):} Đẩy các bit sang trái $n$ vị trí, thêm $n$ bit 0 vào bên phải (Tương đương nhân với $2^n$).
+    \item \textbf{Phép dịch phải số học (\texttt{>> n}):} Đẩy các bit sang phải $n$ vị trí. Với số có dấu, các ô trống bên trái sẽ được điền bằng bit dấu (bit 1 nếu là số âm, bit 0 nếu là số dương).
+    \begin{itemize}
+        \item Ví dụ số âm: \texttt{11110000 >> 2 = 11111100}.
+        \item Ví dụ số dương: \texttt{00001100 >> 2 = 00000011}.
+    \end{itemize}
+    \item \textbf{Phép phủ định logic (\texttt{!}):} Trả về \texttt{1} nếu số đó bằng 0, trả về \texttt{0} nếu số đó khác 0.
+    \begin{itemize}
+        \item Ví dụ: \texttt{!0 = 1}, \texttt{!5 = 0}, \texttt{!-100 = 0}.
+    \end{itemize}
+    \item Số bù 2 (Số nguyên có dấu):
+    \begin{itemize}
+        \item Bit ngoài cùng bên trái (bit 31) là bit dấu. Nếu nó bằng $1 \rightarrow$ số âm, nếu bằng $0 \rightarrow$ số dương hoặc 0.
+        \item Giá trị đối của \texttt{x} (tức \texttt{-x}) luôn luôn bằng \texttt{\(\sim\) x + 1} (đảo tất cả các bit rồi cộng 1).
+        \item Số nhỏ nhất biểu diễn được (\texttt{Tmin}): \texttt{0x80000000} (chỉ có bit dấu là 1).
+        \item Số lớn nhất biểu diễn được (\texttt{Tmax}): \texttt{0x7FFFFFFF} (bit dấu bằng 0, tất cả các bit còn lại là 1).
+    \end{itemize}
+\end{enumerate}
+
+\newpage
+
+\section{PHẦN 3: GIẢI THÍCH CHI TIẾT TỪNG HÀM TRONG BITS.C}
+
+\subsection{Hàm 1: \texttt{bitXor(int x, int y)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Hãy tính phép toán \texttt{x \textasciicircum\ y} (XOR) nhưng bạn chỉ được dùng hai toán tử là \texttt{\(\sim\)} (NOT) và \texttt{\&} (AND).
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 14. Số toán tử chúng ta dùng: 7.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Định nghĩa phép XOR là: Trả về các bit mà \texttt{x} và \texttt{y} khác nhau.
+        \item Tức là: (\texttt{x} là 1 VÀ \texttt{y} là 0) HOẶC (\texttt{x} là 0 VÀ \texttt{y} là 1).
+        \item Biểu thức logic: \texttt{(x \& \(\sim\) y) | (\(\sim\) x \& y)}.
+        \item Nhưng đề bài cấm dùng phép OR (\texttt{|}). Chúng ta phải chuyển phép OR thành phép AND bằng cách dùng định lý De Morgan:
+        \[ A \lor B = \neg(\neg A \land \neg B) \]
+        Thay $A = (x \land \neg y)$ và $B = (\neg x \land y)$, ta được biểu thức chỉ có \texttt{\(\sim\)} và \texttt{\&}:
+        
+        \texttt{\(\sim\)(\(\sim\)(x \& \(\sim\) y) \& \(\sim\)(\(\sim\) x \& y))}
+        \item Có một cách viết khác gọn hơn và chạy nhanh hơn:
+        \begin{itemize}
+            \item \texttt{\(\sim\)(x \& y)}: Lọc bỏ những vị trí mà cả hai cùng bằng 1.
+            \item \texttt{\(\sim\)(\(\sim\) x \& \(\sim\) y)}: Lọc bỏ những vị trí mà cả hai cùng bằng 0 (vì đảo của 0 là 1, nếu cả hai là 0 thì \texttt{\(\sim\) x \& \(\sim\) y} bằng 1, đảo lại được 0).
+            \item Kết hợp hai cái bằng phép AND: \texttt{\(\sim\)(x \& y) \& \(\sim\)(\(\sim\) x \& \(\sim\) y)}.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int bitXor(int x, int y) {
+  // ~(x & y): Nhung bit KHONG DONG THOI bang 1 o ca x va y
+  // ~(~x & ~y): Nhung bit KHONG DONG THOI bang 0 o ca x va y
+  // AND hai gia tri nay lai ta se giu duoc nhung bit ma x va y khac nhau.
+  return ~(x & y) & ~(~x & ~y);
+}
+\end{lstlisting}
+\end{minipage}
+    \item \textbf{Ví dụ minh họa:}
+    Giả sử \texttt{x = 4} (nhị phân \texttt{0100}), \texttt{y = 5} (nhị phân \texttt{0101}).
+    \begin{itemize}
+        \item \texttt{x \& y} = \texttt{0100 \& 0101} = \texttt{0100}.
+        \item \texttt{\(\sim\)(x \& y)} = \texttt{\(\sim\) 0100} = \texttt{1011}.
+        \item \texttt{\(\sim\) x} = \texttt{1011}, \texttt{\(\sim\) y} = \texttt{1010}.
+        \item \texttt{\(\sim\) x \& \(\sim\) y} = \texttt{1011 \& 1010} = \texttt{1010}.
+        \item \texttt{\(\sim\)(\(\sim\) x \& \(\sim\) y)} = \texttt{\(\sim\) 1010} = \texttt{0101}.
+        \item Kết quả: \texttt{1011 \& 0101} = \texttt{0001} (bằng 1). Đúng bằng \texttt{4 \textasciicircum\ 5 = 1}.
+    \end{itemize}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 2: \texttt{tmin(void)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Trả về số nguyên âm nhỏ nhất có thể biểu diễn bằng hệ bù 2 32-bit.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 4. Số toán tử chúng ta dùng: 1.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Số nguyên âm nhỏ nhất (\texttt{Tmin}) trong hệ 32-bit là số có dạng nhị phân: \texttt{1000 0000 0000 0000 0000 0000 0000 0000} (chữ số 1 ở vị trí bit thứ 31, và 31 vị trí còn lại là số 0).
+        \item Hệ cơ số 16 của số này là \texttt{0x80000000}.
+        \item Ta có thể tạo ra số này bằng cách lấy số \texttt{1} dịch sang trái 31 bit.
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int tmin(void) {
+  // Lay so 1 (nhi phan ...0001) dich trai 31 lan de dua bit 1 len vi tri bit dau cao nhat.
+  return 1 << 31;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 3: \texttt{isTmax(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Trả về \texttt{1} nếu \texttt{x} đúng bằng số nguyên dương lớn nhất (\texttt{Tmax} = \texttt{0x7FFFFFFF}), ngược lại trả về \texttt{0}. Bạn không được phép sử dụng toán tử dịch bit (\texttt{<<} hay \texttt{>>}).
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 10. Số toán tử chúng ta dùng: 6.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Số \texttt{Tmax} là \texttt{0x7FFFFFFF} (nhị phân: bit dấu bằng 0, toàn bộ 31 bit còn lại bằng 1).
+        \item Nếu ta cộng thêm 1 vào \texttt{Tmax}, nó sẽ tràn số thành \texttt{Tmin} (\texttt{0x80000000}, chỉ có bit dấu là 1, còn lại là 0).
+        \item Lúc này, nếu ta lấy số đảo bit của \texttt{Tmax} (tức là \texttt{\(\sim\) Tmax}), ta cũng thu được \texttt{0x80000000}.
+        \item Như vậy, với số \texttt{Tmax}, ta luôn có thuộc tính đặc biệt: \texttt{(x + 1)} bằng đúng \texttt{\(\sim\) x}.
+        \item Phép XOR \texttt{\textasciicircum} giữa hai số bằng nhau sẽ cho kết quả bằng 0: \texttt{(x + 1) \textasciicircum\ \(\sim\) x == 0}.
+        \item Trường hợp ngoại lệ: Số \texttt{-1} (nhị phân toàn bit 1: \texttt{0xFFFFFFFF}) cũng có tính chất này! Vì \texttt{-1 + 1 = 0} và đảo bit của \texttt{-1} (\texttt{\(\sim\)(-1)}) cũng bằng 0. Nên \texttt{(0 \textasciicircum\ 0) == 0}.
+        \item Vì vậy, ta phải loại trừ số \texttt{-1}. Ta biết rằng nếu \texttt{x = -1} thì \texttt{x + 1 = 0}. Ta dùng phép phủ định logic \texttt{!(x + 1)} để kiểm tra. Nếu \texttt{x + 1} bằng 0, biểu thức này trả về 1, ngược lại trả về 0.
+        \item Ta kết hợp điều kiện loại trừ bằng phép OR \texttt{|}. Chỉ khi cả hai điều kiện cùng bằng 0 thì ta mới xác định đó đúng là \texttt{Tmax}.
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int isTmax(int x) {
+  int x_plus_1 = x + 1; // Tao gia tri x + 1
+  // (x_plus_1 ^ ~x): Kiem tra xem x + 1 co bang ~x khong. Neu bang nhau, ket qua se la 0.
+  // !x_plus_1: Loai tru so -1. Neu x = -1 thi x+1 = 0, phu dinh lai duoc 1.
+  // Phep | ket hop: Neu x dung la Tmax, ca hai ve deu la 0, 0 | 0 = 0.
+  // Phep ! ngoai cung bien ket qua 0 thanh 1 (dung), cac gia tri khac thanh 0 (sai).
+  return !((x_plus_1 ^ ~x) | !x_plus_1);
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 4: \texttt{allOddBits(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Kiểm tra xem toàn bộ các bit ở vị trí lẻ (bit 1, 3, 5, ..., 31) của số \texttt{x} có đồng thời bằng 1 hay không. Nếu có thì trả về \texttt{1}, nếu thiếu dù chỉ một bit thì trả về \texttt{0}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 12. Số toán tử chúng ta dùng: 7.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Ta cần tạo một số mặt nạ (mask) mà toàn bộ các bit lẻ bằng 1, bit chẵn bằng 0. Số đó là \texttt{0xAAAAAAAA} (nhị phân: \texttt{1010 1010...}).
+        \item Đề bài cấm viết hằng số lớn hơn 255. Do đó ta không thể viết trực tiếp \texttt{0xAAAAAAAA}. Ta phải ghép nó từ số nhỏ \texttt{0xAA} (nhập hệ 10 là 170).
+        \item Ta dịch bit \texttt{0xAA} sang trái 8 bit rồi OR lại để được \texttt{0xAAAA}. Dịch tiếp \texttt{0xAAAA} sang trái 16 bit rồi OR lại để được \texttt{0xAAAAAAAA}.
+        \item Để kiểm tra \texttt{x} có đủ các bit lẻ hay không, ta lấy \texttt{x \& mask}. Phép toán này sẽ giữ lại các bit lẻ của \texttt{x} và xóa hết các bit chẵn về 0.
+        \item Nếu các bit lẻ của \texttt{x} đều bằng 1, thì kết quả của \texttt{x \& mask} phải giống hệt như \texttt{mask}.
+        \item Ta so sánh hai số này bằng phép XOR \texttt{\textasciicircum}. Nếu giống nhau hoàn toàn, phép XOR sẽ trả về 0. Ta phủ định \texttt{!} kết quả này để trả về 1.
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int allOddBits(int x) {
+  int mask = 0xAA | (0xAA << 8); // Tao ra 0xAAAA (16 bit le bang 1)
+  mask = mask | (mask << 16);    // Nhan doi len thanh 0xAAAAAAAA (32 bit le bang 1)
+  
+  // (x & mask): Loc lay cac bit o vi tri le trong x.
+  // ... ^ mask: So sanh phan loc duoc voi mask goc. Neu khop hoan toan, ket qua bang 0.
+  // !(...): Bien ket qua 0 thanh 1 de tra ve ket qua Dung.
+  return !((x & mask) ^ mask);
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 5: \texttt{negate(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Trả về giá trị số đối \texttt{-x}. Ví dụ đầu vào là \texttt{5} thì trả về \texttt{-5}, đầu vào là \texttt{-10} thì trả về \texttt{10}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 5. Số toán tử chúng ta dùng: 2.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Trong máy tính sử dụng biểu diễn số nguyên bù 2, số đối của số \texttt{x} luôn bằng phép đảo bit cộng 1.
+        \item Công thức toán học toán tử bit: $-x = \sim x + 1$.
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int negate(int x) {
+  // Dao nguoc toan bo bit cua x (NOT x) roi cong them 1.
+  return ~x + 1;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 6: \texttt{isAsciiDigit(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Kiểm tra xem giá trị của \texttt{x} có nằm trong khoảng mã ASCII từ \texttt{0x30} (số 48 trong hệ thập phân, ký tự '0') đến \texttt{0x39} (số 57, ký tự '9') hay không. Nếu nằm trong khoảng này trả về \texttt{1}, ngược lại trả về \texttt{0}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 15. Số toán tử chúng ta dùng: 13.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Một số \texttt{x} nằm trong khoảng $[0x30, 0x39]$ khi và chỉ khi:
+        \begin{itemize}
+            \item $x \ge 0x30 \rightarrow$ phép tính $x - 0x30 \ge 0$.
+            \item $x \le 0x39 \rightarrow$ phép tính $0x39 - x \ge 0$ (hoặc tương đương $x - 0x3A < 0$).
+        \end{itemize}
+        \item Trong máy tính, phép trừ được biểu diễn bằng phép cộng số đối: $A - B = A + \sim B + 1$.
+        \item Ta kiểm tra kết quả phép tính có âm hay không bằng cách dịch phải 31 bit để lấy bit dấu. Nếu kết quả âm, bit dấu sẽ là \texttt{1} (hoặc \texttt{-1} nếu dùng dịch phải số học). Nếu kết quả dương hoặc bằng 0, bit dấu là \texttt{0}.
+        \item Trường hợp tràn số: Nếu \texttt{x} là một số âm rất lớn hoặc dương rất lớn, phép trừ có thể bị tràn làm đảo lộn bit dấu. Do đó, ta phải kiểm tra thêm: bit dấu của \texttt{x} phải bằng 0 (tức \texttt{x} không phải số âm). Ta lấy $\text{sign} = x \gg 31$. Nếu $x \ge 0$ thì $\text{sign}$ bằng 0.
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int isAsciiDigit(int x) {
+  int sign = x >> 31;                 // Lay bit dau cua x. Neu x am, sign se bang -1. Neu x >= 0, sign = 0.
+  int upper = (x + ~0x3A + 1) >> 31;  // Tinh hieu x - 0x3A. Neu x < 0x3A (tuc <= 0x39), hieu nay am, bit dau bang -1 (nhi phan toan bit 1).
+  int lower = (x + ~0x30 + 1) >> 31;  // Tinh hieu x - 0x30. Neu x >= 0x30, hieu nay khong am, bit dau bang 0.
+  
+  // !sign: Tra ve 1 neu x >= 0 (loai tru so am tranh tran so).
+  // upper: Tra ve -1 (toan bit 1) neu x <= 0x39.
+  // !lower: lower bang -1 neu x < 0x30. Phu dinh !lower bang 1 neu x >= 0x30.
+  // AND ket hop ca ba dieu kien lai.
+  return !sign & upper & !lower;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 7: \texttt{conditional(int x, int y, int z)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Tái lập lại toán tử ba ngôi \texttt{x ? y : z}. Nếu \texttt{x} khác 0 thì trả về \texttt{y}, nếu \texttt{x} bằng 0 thì trả về \texttt{z}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 16. Số toán tử chúng ta dùng: 7.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Ta muốn tạo ra một chiếc "mặt nạ lọc" (mask) dựa trên \texttt{x}.
+        \item Nếu \texttt{x != 0}, mặt nạ phải bằng \texttt{0xFFFFFFFF} (toàn bộ bit 1). Khi đó ta dùng \texttt{y \& mask} để lấy toàn bộ bit của \texttt{y}.
+        \item Nếu \texttt{x == 0}, mặt nạ phải bằng \texttt{0x00000000} (toàn bộ bit 0). Khi đó ta dùng \texttt{z \& \(\sim\) mask} (tức \texttt{z \& 0xFFFFFFFF}) để lấy toàn bộ bit của \texttt{z}.
+        \item Cách tạo mặt nạ:
+        \begin{itemize}
+            \item Dùng phép phủ định logic \texttt{!x}:
+            \begin{itemize}
+                \item Nếu \texttt{x != 0} $\rightarrow$ \texttt{!x = 0}.
+                \item Nếu \texttt{x == 0} $\rightarrow$ \texttt{!x = 1}.
+            \end{itemize}
+            \item Lấy kết quả đó cộng với \texttt{\(\sim\) 0} (tức số \texttt{-1}, có biểu diễn nhị phân là toàn bộ bit 1):
+            \begin{itemize}
+                \item Nếu \texttt{x != 0}: \texttt{0 + (-1) = -1} (mặt nạ nhị phân toàn 1).
+                \item Nếu \texttt{x == 0}: \texttt{1 + (-1) = 0} (mặt nạ nhị phân toàn 0).
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int conditional(int x, int y, int z) {
+  int mask = !x + ~0; // Tao mat na: bang 0xFFFFFFFF neu x khac 0; bang 0x00000000 neu x bang 0.
+  
+  // (y & mask): Giu lai y neu mask toan 1, bang 0 neu mask toan 0.
+  // (z & ~mask): Giu lai z neu mask toan 0 (khi do ~mask toan 1), bang 0 neu mask toan 1.
+  // Phep | ghep hai phan lai de tra ve gia tri mong muon.
+  return (y & mask) | (z & ~mask);
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 8: \texttt{isLessOrEqual(int x, int y)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Trả về \texttt{1} nếu \texttt{x <= y}, ngược lại trả về \texttt{0}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 24. Số toán tử chúng ta dùng: 16.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Thông thường để so sánh \texttt{x <= y}, ta chỉ việc lấy hiệu \texttt{y - x} và kiểm tra xem kết quả có lớn hơn hoặc bằng 0 hay không.
+        \item Tuy nhiên, trong kiểu số nguyên có giới hạn, phép trừ có thể gây ra hiện tượng tràn số (overflow).
+        \begin{itemize}
+            \item Ví dụ: \texttt{x} là số âm cực lớn (\texttt{Tmin}), và \texttt{y} là số dương lớn. Hiệu \texttt{y - x} sẽ là phép cộng hai số dương lớn, vượt quá giới hạn dương và quay về số âm. Khi đó phép so sánh dấu sẽ bị sai.
+        \end{itemize}
+        \item Để giải quyết triệt để, ta chia làm 2 trường hợp:
+        \begin{enumerate}
+            \item Khác dấu: \texttt{x} và \texttt{y} khác dấu nhau.
+            \begin{itemize}
+                \item Nếu \texttt{x} âm ($sx = 1$) and \texttt{y} dương ($sy = 0$), chắc chắn $x < y$ là đúng $\rightarrow$ trả về 1.
+                \item Nếu \texttt{x} dương ($sx = 0$) and \texttt{y} âm ($sy = 1$), chắc chắn $x > y \rightarrow$ trả về 0.
+            \end{itemize}
+            \item Cùng dấu: \texttt{x} and \texttt{y} cùng dương hoặc cùng âm.
+            \begin{itemize}
+                \item Khi cùng dấu, phép trừ \texttt{y - x} chắc chắn không bao giờ bị tràn số.
+                \item Ta tính hiệu \texttt{diff = y - x} (tức \texttt{y + \(\sim\) x + 1}).
+                \item Lấy bit dấu của hiệu: \texttt{diff\_sign = (diff >> 31) \& 1}.
+                \item Nếu hiệu $\ge 0$ (tức \texttt{diff\_sign == 0}) thì \texttt{x <= y} đúng $\rightarrow$ trả về 1.
+            \end{itemize}
+        \end{enumerate}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int isLessOrEqual(int x, int y) {
+  int sx = (x >> 31) & 1; // Lay bit dau cua x (1 neu am, 0 neu khong am)
+  int sy = (y >> 31) & 1; // Lay bit dau cua y (1 neu am, 0 neu khong am)
+  
+  // Tinh hieu y - x va lay bit dau cua ket qua.
+  int diff_sign = ((y + ~x + 1) >> 31) & 1; 
+  
+  int same_sign = !(sx ^ sy); // Tra ve 1 neu x va y cung dau, 0 neu khac dau.
+  
+  // (same_sign & !diff_sign): Neu cung dau, ket qua dung khi hieu y-x khong am (diff_sign == 0).
+  // (!same_sign & sx): Neu khac dau, ket qua dung khi x la so am (sx == 1).
+  return (same_sign & !diff_sign) | (!same_sign & sx);
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 9: \texttt{logicalNeg(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Tự thiết kế toán tử logic phủ định \texttt{!x} (trả về 1 nếu \texttt{x} bằng 0, trả về 0 nếu \texttt{x} khác 0) mà không được dùng chính toán tử \texttt{!}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 12. Số toán tử chúng ta dùng: 5.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Ta cần tận dụng một đặc điểm duy nhất của số 0:
+        \begin{itemize}
+            \item Số 0 và số đối của nó (là \texttt{-0} hay \texttt{\(\sim\) x + 1}) đều có bit dấu bằng 0.
+            \item Với mọi số khác 0 (kể cả số âm và số dương), một trong hai số \texttt{x} hoặc \texttt{-x} sẽ luôn là số âm (tức là bit thứ 31 bằng 1).
+        \end{itemize}
+        \item Ví dụ:
+        \begin{itemize}
+            \item Nếu \texttt{x = 5} (dương), số đối \texttt{-5} có bit dấu bằng 1.
+            \item Nếu \texttt{x = -5} (âm), nó có bit dấu bằng 1.
+            \item Nếu \texttt{x = Tmin} (\texttt{-2147483648}), số đối của nó cũng là \texttt{Tmin}, có bit dấu bằng 1.
+        \end{itemize}
+        \item Do đó, ta lấy phép OR giữa \texttt{x} và số đối \texttt{-x} (tức \texttt{\(\sim\) x + 1}): \texttt{x | (\(\sim\) x + 1)}.
+        \begin{itemize}
+            \item Nếu \texttt{x != 0}: Biểu thức này chắc chắn có bit thứ 31 bằng 1.
+            \item Nếu \texttt{x == 0}: Biểu thức này bằng \texttt{0 | 0 = 0} (bit thứ 31 bằng 0).
+        \end{itemize}
+        \item Ta dịch phải số học 31 bit để đưa bit dấu này phủ toàn bộ số:
+        \begin{itemize}
+            \item Nếu \texttt{x != 0} $\rightarrow$ dịch phải được \texttt{0xFFFFFFFF} (tức số \texttt{-1}).
+            \item Nếu \texttt{x == 0} $\rightarrow$ dịch phải được \texttt{0x00000000} (tức số \texttt{0}).
+        \end{itemize}
+        \item Cộng thêm 1 vào kết quả để đưa về dạng logic chuẩn \texttt{0} hoặc \texttt{1}:
+        \begin{itemize}
+            \item Nếu khác 0: \texttt{-1 + 1 = 0}.
+            \item Nếu bằng 0: \texttt{0 + 1 = 1}.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int logicalNeg(int x) {
+  // (~x + 1) la so doi cua x.
+  // (x | so doi): Lay bit dau. Luon co bit 31 bang 1 neu x khac 0.
+  // >> 31: Dich phai so hoc de tao so toan bit 1 (-1) hoac toan bit 0 (0).
+  // + 1: Chuyen doi -1 thanh 0, va chuyen doi 0 thanh 1.
+  return ((x | (~x + 1)) >> 31) + 1;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 10: \texttt{howManyBits(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Tính số bit tối thiểu cần thiết để biểu diễn giá trị của số \texttt{x} dưới dạng số nguyên bù 2 (bao gồm cả bit dấu).
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 90. Số toán tử chúng ta dùng: 32.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Với số dương, ví dụ số \texttt{5} (nhị phân \texttt{0101}), ta cần ít nhất 4 bit để biểu diễn. Số bit tối thiểu phụ thuộc vào vị trí của bit \texttt{1} cao nhất.
+        \item Với số âm, ví dụ số \texttt{-5} (nhị phân \texttt{1011}), số bit tối thiểu cần dùng cũng tương tự như số dương đảo bit của nó (tức là số \texttt{4}, nhị phân \texttt{0100} $\rightarrow$ cần 4 bit).
+        \item Do đó, bước 1: Nếu \texttt{x} âm, ta đảo toàn bộ bit của nó. Nếu \texttt{x} dương, ta giữ nguyên. Ta làm việc này bằng phép XOR với bit dấu: \texttt{x = x \textasciicircum\ (x >> 31)}.
+        \item Bước 2: Ta đi tìm vị trí bit 1 cao nhất bằng kỹ thuật Tìm kiếm nhị phân trên 32 bit:
+        \begin{itemize}
+            \item Kiểm tra xem nửa trên (16 bit cao) có chứa bit 1 nào không:
+            
+            \texttt{b16 = !(!(x >> 16)) << 4;}
+            
+            Nếu nửa trên có bit 1, ta dịch phải \texttt{x} đi 16 bit để tiếp tục tìm kiếm trong 16 bit đó, đồng thời ghi nhận đã tìm thấy ở khoảng 16 bit (\texttt{b16 = 16}). Ngược lại \texttt{b16 = 0}.
+            \item Tương tự kiểm tra tiếp trong phần còn lại cho khoảng 8 bit (\texttt{b8}), 4 bit (\texttt{b4}), 2 bit (\texttt{b2}), và 1 bit (\texttt{b1}).
+            \item Cuối cùng cộng tất cả các khoảng dịch lại, cộng thêm 1 bit cho vị trí bit 0 và 1 bit dấu.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int howManyBits(int x) {
+  int sign, b16, b8, b4, b2, b1, b0;
+  sign = x >> 31; // Tao mat na dau: 0xFFFFFFFF neu x am, 0x00000000 neu x duong.
+  x = x ^ sign;   // Neu x am, dao bit cua x. Neu x duong, giu nguyen x.
+
+  // Tim kiem nhi phan bit 1 cao nhat:
+  b16 = !(!(x >> 16)) << 4; // Neu x > 0xFFFF, b16 = 16, nguoc lai bang 0.
+  x = x >> b16;             // Dich phai x de thu hep pham vi tim kiem.
+
+  b8 = !(!(x >> 8)) << 3;   // Neu x con lai > 0xFF, b8 = 8, nguoc lai bang 0.
+  x = x >> b8;
+
+  b4 = !(!(x >> 4)) << 2;   // Neu x con lai > 0xF, b4 = 4.
+  x = x >> b4;
+
+  b2 = !(!(x >> 2)) << 1;   // Neu x con lai > 0x3, b2 = 2.
+  x = x >> b2;
+
+  b1 = !(!(x >> 1));        // Neu x con lai > 0x1, b1 = 1.
+  x = x >> b1;
+
+  b0 = x;                   // Bit cuoi cung con lai.
+
+  // Tong so bit can dung = tong cac buoc dich + 1 bit co so + 1 bit dau.
+  return b16 + b8 + b4 + b2 + b1 + b0 + 1;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 11: \texttt{floatScale2(unsigned uf)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Đầu vào là biểu diễn bit của một số thực đơn đơn độ chính xác chuẩn IEEE 754. Hãy nhân số đó với 2 và trả về biểu diễn bit của kết quả.
+    \item Quy tắc: Đây là phần số thực nên bạn được phép dùng cấu trúc rẽ nhánh \texttt{if}, vòng lặp, và các hằng số bất kỳ.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 30. Số toán tử chúng ta dùng: 13.
+    \item Ý tưởng logic đơn giản (IEEE 754):
+    \begin{itemize}
+        \item Một số thực 32-bit gồm 3 phần:
+        \begin{itemize}
+            \item 1 bit dấu ở vị trí 31 (\texttt{sign}).
+            \item 8 bit mũ ở vị trí 30-23 (\texttt{exp}).
+            \item 23 bit phân số ở vị trí 22-0 (\texttt{frac}).
+        \end{itemize}
+        \item Khi nhân số thực này với 2, ta xét các trường hợp:
+        \begin{enumerate}
+            \item Trường hợp đặc biệt ($\text{exp} = \text{0xFF}$): Số này là NaN (Not a Number) hoặc Vô cùng ($\infty$). Theo chuẩn, vô cùng hay NaN nhân 2 vẫn giữ nguyên giá trị $\rightarrow$ trả về chính nó.
+            \item Trường hợp số phi chuẩn ($\text{exp} = 0$): Số này cực kỳ nhỏ, gần bằng 0. Để nhân đôi, ta chỉ cần dịch trái phần phân số đi 1 bit: \texttt{frac << 1}. Khi dịch trái, nếu bit cao nhất của phân số vượt ngưỡng, nó sẽ tự tràn vào phần mũ (làm phần mũ lên 1), biến số đó thành số chuẩn hóa một cách hoàn toàn chính xác.
+            \item Trường hợp số chuẩn hóa ($0 < \text{exp} < \text{0xFF}$): Ta chỉ cần tăng phần mũ lên 1 đơn vị (\texttt{exp++}). Nếu sau khi tăng mà phần mũ đạt giá trị tràn \texttt{0xFF}, số này trở thành vô cùng, ta đặt phần phân số \texttt{frac = 0}.
+        \end{enumerate}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+unsigned floatScale2(unsigned uf) {
+  unsigned sign = uf & 0x80000000; // Trich xuat bit dau
+  unsigned exp = (uf >> 23) & 0xFF; // Trich xuat 8 bit mu
+  unsigned frac = uf & 0x007FFFFF; // Trich xuat 23 bit phan so
+
+  if (exp == 0xFF) return uf;      // Neu la NaN hoac Infinity, tra ve nguyen ban.
+  
+  if (exp == 0) {
+    // Neu la so phi chuan (exp = 0), dich trai uf 1 bit (giu nguyen bit dau).
+    return sign | (uf << 1);
+  }
+  
+  exp++; // So chuan hoa binh thuong: tang phan mu len 1 (tuong duong nhan 2).
+  if (exp == 0xFF) {
+    frac = 0; // Neu vuot nguong mu toi da, bien thanh so Vo cung (frac = 0).
+  }
+  
+  // Ghep cac thanh phan lai va tra ve.
+  return sign | (exp << 23) | frac;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 12: \texttt{floatFloat2Int(unsigned uf)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Thực hiện chuyển đổi ép kiểu từ số thực (float) sang số nguyên (int). Nếu giá trị float vượt quá giới hạn biểu diễn của số nguyên hoặc là NaN, trả về \texttt{0x80000000}.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 30. Số toán tử chúng ta dùng: 14.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Công thức tính giá trị số thực chuẩn hóa: $V = (-1)^{\text{sign}} \times (1.\text{frac}) \times 2^E$, trong đó số mũ thực tế là $E = \text{exp} - 127$.
+        \item Ta xét các trường hợp của $E$:
+        \begin{itemize}
+            \item Nếu $E < 0$ ($\text{exp} < 127$): Trị tuyệt đối của số thực này nhỏ hơn 1.0 (ví dụ \texttt{0.5}, \texttt{-0.9}). Khi ép sang kiểu nguyên \texttt{int}, kết quả luôn bị làm tròn về \texttt{0}.
+            \item Nếu $E \ge 31$ ($\text{exp} \ge 158$): Vượt quá khả năng biểu diễn của số nguyên 32-bit có dấu (tối đa là $2^{31}-1$). Trả về giá trị lỗi \texttt{0x80000000}.
+            \item Nếu $0 \le E < 31$: Ta khôi phục phần định trị đầy đủ bằng cách thêm số 1 ẩn vào trước phần phân số: $M = 1.\text{frac}$ (tương ứng mã code là \texttt{frac | 0x00800000}).
+            \begin{itemize}
+                \item Phần định trị $M$ này đang có 23 bit sau dấu phẩy.
+                \item Nếu $E \ge 23$: Ta cần dịch trái thêm để bù vào phần nguyên: \texttt{val = M << (E - 23)}.
+                \item Nếu $E < 23$: Ta dịch phải để loại bỏ các bit thập phân dư thừa: \texttt{val = M >> (23 - E)}.
+            \end{itemize}
+        \end{itemize}
+        \item Cuối cùng, nếu số thực ban đầu mang dấu âm (\texttt{sign} bằng 1), ta đảo dấu giá trị số nguyên thu được (\texttt{val = -val}).
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+int floatFloat2Int(unsigned uf) {
+  unsigned sign = uf & 0x80000000;
+  unsigned exp = (uf >> 23) & 0xFF;
+  unsigned frac = uf & 0x007FFFFF;
+  int E = exp - 127; // Tinh so mu thuc te
+  int M;
+  int val;
+
+  if (exp < 127) return 0; // Tri tuyet doi nho hon 1 -> lam tron ve 0.
+  if (exp >= 158) return 0x80000000u; // Vuot qua gioi han so nguyen 32-bit -> loi.
+
+  M = frac | 0x00800000; // Khoi phuc bit an 1 thanh 1.frac (tong cong 24 bit dinh tri)
+  if (E >= 23) {
+    val = M << (E - 23); // So mu lon hon so bit phan so -> dich trai de tang gia tri.
+  } else {
+    val = M >> (23 - E); // So mu nho hon 23 -> dich phai de luoc bo phan thap phan.
+  }
+
+  if (sign) {
+    val = -val; // Neu so thuc am, doi dau so nguyen ket qua.
+  }
+  return val;
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+
+\subsection{Hàm 13: \texttt{floatPower2(int x)}}
+\begin{itemize}
+    \item \textbf{Yêu cầu đề bài:} Trả về biểu diễn nhị phân (dưới dạng float) của biểu thức lũy thừa $2.0^x$ với số nguyên $x$ bất kỳ.
+    \item \textbf{Giới hạn toán tử cho phép:} Tối đa 30. Số toán tử chúng ta dùng: 9.
+    \item \textbf{Ý tưởng logic đơn giản:}
+    \begin{itemize}
+        \item Ta cần tính biểu diễn bit của số thực $2.0^x$:
+        \begin{itemize}
+            \item Giá trị lớn nhất mà số thực chuẩn hóa biểu diễn được là khoảng $2^{127}$. Nếu $x > 127$, kết quả bị tràn số $\rightarrow$ trả về Vô cùng dương \texttt{+INF} (\texttt{0x7F800000}).
+            \item Giá trị nhỏ nhất có thể biểu diễn được dưới dạng số phi chuẩn là $2^{-149}$. Nếu $x < -149$, số quá nhỏ $\rightarrow$ làm tròn về \texttt{0}.
+            \item Khoảng số chuẩn hóa $[-126, 127]$: Giá trị phần mũ lưu trữ trong bộ nhớ sẽ là $\text{exp} = x + 127$. Phần phân số \texttt{frac} bằng 0. Ta trả về \texttt{(x + 127) << 23}.
+            \item Khoảng số phi chuẩn $[-149, -127]$: Phần mũ \texttt{exp} bằng 0. Giá trị được biểu diễn duy nhất qua phần phân số \texttt{frac}. Bit 1 sẽ được dịch chuyển tới vị trí thứ $x + 149$. Ta trả về \texttt{1 << (x + 149)}.
+        \end{itemize}
+    \end{itemize}
+    \item \textbf{Giải thích code chi tiết:}
+
+
+\begin{minipage}{\linewidth}
+\begin{lstlisting}[language=C]
+unsigned floatPower2(int x) {
+  if (x > 127) return 0x7F800000;  // Vuot gioi han tren -> Tra ve duong vo cung.
+  if (x < -149) return 0;          // Vuot gioi han duoi -> Tra ve 0.
+  
+  if (x >= -126) {
+    // So thuc chuan hoa: phan mu luu gia tri (x + 127), phan phan so bang 0.
+    return (x + 127) << 23;
+  }
+  
+  // So thuc phi chuan: phan mu bang 0, chi co 1 bit 1 nam o phan phan so.
+  return 1 << (x + 149);
+}
+\end{lstlisting}
+\end{minipage}
+\end{itemize}
+
+\newpage
+\section*{LỜI CẢM ƠN \& KẾT LUẬN}
+Báo cáo xin gửi lời cảm ơn chân thành đến tập thể các anh chị hướng dẫn tại Viettel High Tech đã tạo điều kiện, hỗ trợ và định hướng kỹ thuật trong suốt quá trình hoàn thành bài lab. Những kiến thức thu nhận được từ bài lab Data Lab này sẽ là nền tảng vững chắc cho quá trình học tập và nghiên cứu chuyên sâu về lĩnh vực Embedded Linux sau này.
+
+\end{document}
