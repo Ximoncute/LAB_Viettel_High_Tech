@@ -1,8 +1,5 @@
-# BÁO CÁO CHI TIẾT: GIẢI THÍCH TOÀN BỘ BÀI TẬP CS:APP DATA LAB (bits.c)
+# BÁO CÁO CHI TIẾT: BÀI TẬP CS:APP DATA LAB (bits.c)
 
-Báo cáo này được viết chi tiết nhất có thể, giải thích từ những khái niệm cơ bản nhất về toán tử bit, số bù 2, số thực dấu phẩy động (IEEE 754) cho đến cách hoạt động của từng dòng code. 
-
----
 
 ## PHẦN 1: HƯỚNG DẪN CHẠY LỆNH NHANH (QUICK START)
 *Bạn chỉ cần copy đúng các lệnh dưới đây vào terminal WSL (hoặc Ubuntu) để cài đặt, biên dịch và chạy thử.*
